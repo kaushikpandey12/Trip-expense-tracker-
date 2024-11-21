@@ -37,7 +37,7 @@
       display: flex;
       flex-direction: column;
     }
-    input, button {
+    input, select, button {
       padding: 10px;
       margin: 5px 0;
       border-radius: 5px;
@@ -74,6 +74,15 @@
       <input type="text" id="tripName" placeholder="Enter trip name" required><br>
       <label for="participants">Participants (comma separated):</label>
       <input type="text" id="participants" placeholder="Enter participant names" required><br>
+      <label for="currency">Currency:</label>
+      <select id="currency" required>
+                <option value="INR">₹ (INR - Indian Rupee)</option>
+        <option value="USD">$ (USD - US Dollar)</option>
+        <option value="EUR">€ (EUR - Euro)</option>
+        <option value="GBP">£ (GBP - British Pound)</option>
+        <option value="JPY">¥ (JPY - Japanese Yen)</option>
+        <option value="AUD">A$ (AUD - Australian Dollar)</option>
+      </select><br>
       <button type="submit">Create Trip</button>
     </form>
 
@@ -110,10 +119,23 @@
       
       const tripName = document.getElementById("tripName").value;
       const participants = document.getElementById("participants").value.split(',').map(p => p.trim());
+      const currencyOption = document.getElementById("currency").value;
+
+      const currencySymbols = {
+        INR: "₹",
+        USD: "$",
+        EUR: "€",
+        GBP: "£",
+        JPY: "¥",
+        AUD: "A$"
+      };
+
+      const currencySymbol = currencySymbols[currencyOption];
 
       trip = {
         name: tripName,
-        participants: participants
+        participants: participants,
+        currency: currencySymbol
       };
 
       // Hide the trip creation form and show the expense form
@@ -154,7 +176,7 @@
     // Update the displayed trip name and participants
     function updateTripInfo() {
       const tripName = document.createElement("h3");
-      tripName.textContent = `Trip: ${trip.name}`;
+      tripName.textContent = `Trip: ${trip.name} (${trip.currency})`;
       const participantsList = document.createElement("ul");
       trip.participants.forEach(p => {
         const participant = document.createElement("li");
@@ -175,7 +197,7 @@
 
       expenses.forEach(exp => {
         const li = document.createElement("li");
-        li.textContent = `${exp.payer} paid $${exp.amount} for ${exp.description}`;
+        li.textContent = `${exp.payer} paid ${trip.currency}${exp.amount.toFixed(2)} for ${exp.description}`;
         expenseList.appendChild(li);
       });
     }
@@ -206,9 +228,9 @@
         const li = document.createElement("li");
 
         if (balance > 0) {
-          li.textContent = `${participant} is owed $${balance.toFixed(2)}`;
+          li.textContent = `${participant} is owed ${trip.currency}${balance.toFixed(2)}`;
         } else if (balance < 0) {
-          li.textContent = `${participant} owes $${Math.abs(balance).toFixed(2)}`;
+          li.textContent = `${participant} owes ${trip.currency}${Math.abs(balance).toFixed(2)}`;
         } else {
           li.textContent = `${participant} is even`;
         }
