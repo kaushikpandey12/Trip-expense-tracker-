@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trip Expense Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f7f7f7;
+      color: #333;
+    }
+    h1, h2 {
+      color: #2a5d84;
+    }
+    .container {
+      width: 80%;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .expense-list, .balance-list {
+      list-style: none;
+      padding: 0;
+    }
+    .expense-list li, .balance-list li {
+      background-color: #f2f2f2;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    form {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      background-color: #2a5d84;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #1e4870;
+    }
+    .balances {
+      margin-top: 30px;
+      font-weight: bold;
+    }
+    .balance-list li {
+      background-color: #e9f7fa;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Trip Expense Tracker</h1>
+
+    <!-- Create a Trip Form -->
+    <h2>Create Trip</h2>
+    <form id="tripForm">
+      <label for="tripName">Trip Name:</label>
+      <input type="text" id="tripName" placeholder="Enter trip name" required><br>
+      <label for="participants">Participants (comma separated):</label>
+      <input type="text" id="participants" placeholder="Enter participant names" required><br>
+      <button type="submit">Create Trip</button>
+    </form>
+
+    <!-- Add Expense Form -->
+    <h2>Add Expense</h2>
+    <form id="expenseForm" style="display:none;">
+      <label for="payer">Who paid?</label>
+      <input type="text" id="payer" placeholder="Enter name of person who paid" required><br>
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" placeholder="Enter expense amount" required><br>
+      <label for="description">Description:</label>
+      <input type="text" id="description" placeholder="Enter expense description" required><br>
+      <button type="submit">Add Expense</button>
+    </form>
+
+    <!-- Expense List -->
+    <h2>Expenses</h2>
+    <ul id="expenseList" class="expense-list"></ul>
+
+    <!-- Balances -->
+    <div class="balances">
+      <h2>Balances</h2>
+      <ul id="balanceList" class="balance-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    let trip = null;
+    let expenses = [];
+
+    // Handle trip creation
+    document.getElementById("tripForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      const tripName = document.getElementById("tripName").value;
+      const participants = document.getElementById("participants").value.split(',').map(p => p.trim());
+
+      trip = {
+        name: tripName,
+        participants: participants
+      };
+
+      // Hide the trip creation form and show the expense form
+      document.getElementById("tripForm").style.display = "none";
+      document.getElementById("expenseForm").style.display = "block";
+      updateTripInfo();
+    });
+
+    // Handle adding expense
+    document.getElementById("expenseForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const payer = document.getElementById("payer").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value);
+      const description = document.getElementById("description").value.trim();
+
+      if (!trip.participants.includes(payer)) {
+        alert('Payer must be a participant in the trip.');
+        return;
+      }
+
+      const expense = {
+        payer,
+        amount,
+        description
+      };
+
+      expenses.push(expense);
+      updateExpenseList();
+      updateBalances();
+
+      // Clear form fields
+      document.getElementById("payer").value = '';
+      document.getElementById("amount").value = '';
+      document.getElementById("description").value = '';
+    });
+
+    // Update the displayed trip name and participants
+    function updateTripInfo() {
+      const tripName = document.createElement("h3");
+      tripName.textContent = `Trip: ${trip.name}`;
+      const participantsList = document.createElement("ul");
+      trip.participants.forEach(p => {
+        const participant = document.createElement("li");
+        participant.textContent = p;
+        participantsList.appendChild(participant);
+      });
+      
+      // Insert trip name and participants into the DOM
+      const tripInfo = document.querySelector(".container");
+      tripInfo.appendChild(tripName);
+      tripInfo.appendChild(participantsList);
+    }
+
+    // Update the expense list UI
+    function updateExpenseList() {
+      const expenseList = document.getElementById("expenseList");
+      expenseList.innerHTML = '';  // Clear the list before adding new items
+
+      expenses.forEach(exp => {
+        const li = document.createElement("li");
+        li.textContent = `${exp.payer} paid $${exp.amount} for ${exp.description}`;
+        expenseList.appendChild(li);
+      });
+    }
+
+    // Update the balances based on the expenses
+    function updateBalances() {
+      const balanceList = document.getElementById("balanceList");
+      balanceList.innerHTML = '';  // Clear the balance list
+
+      // Initialize balances
+      let balances = {};
+      trip.participants.forEach(p => balances[p] = 0);
+
+      // Calculate the total amount spent
+      let totalSpent = expenses.reduce((total, exp) => total + exp.amount, 0);
+
+      // Divide the total amount by the number of participants
+      let perPerson = totalSpent / trip.participants.length;
+
+      // Update balances for each participant
+      expenses.forEach(exp => {
+        balances[exp.payer] += exp.amount;
+      });
+
+      // Display how much each participant owes or is owed
+      for (let participant in balances) {
+        let balance = balances[participant] - perPerson;
+        const li = document.createElement("li");
+
+        if (balance > 0) {
+          li.textContent = `${participant} is owed $${balance.toFixed(2)}`;
+        } else if (balance < 0) {
+          li.textContent = `${participant} owes $${Math.abs(balance).toFixed(2)}`;
+        } else {
+          li.textContent = `${participant} is even`;
+        }
+
+        balanceList.appendChild(li);
+      }
+    }
+  </script>
+</body>
+</html>
